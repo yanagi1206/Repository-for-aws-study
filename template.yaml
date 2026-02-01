@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: first template 
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+       - Key: Name
+         Value: aws-study-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-igw
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-public-1a
+
+  PublicSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-public-1c
+
+  PrivateSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: "ap-northeast-1a"
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-private-1a
+
+  PrivateSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-private-1c
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-public-rtb
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+       RouteTableId: !Ref PublicRouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId: !Ref InternetGateway
+
+  PublicSubnet1aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1a
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet1cRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1c
+      RouteTableId: !Ref PublicRouteTable
+  
+  PrivateRouteTable1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-private-rtb-1a      
+
+  PrivateSubnet1aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1a
+      RouteTableId: !Ref PrivateRouteTable1a
+
+  PrivateRouteTable1c:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: aws-study-vpc-private-rtb-1c
+
+  PrivateSubnet1cRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1c
+      RouteTableId: !Ref PrivateRouteTable1c
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: aws-study-sg
+      GroupDescription: allow SSH, HTTP, and HTTPS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Value: Name
+          Key: aws-study-sg
+
+  Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties: 
+      ImageId: ami-09cd9fdbf26acc6b4
+      InstanceType: t3.micro
+      KeyName: new-yanagi-keypair
+      NetworkInterfaces: 
+      - AssociatePublicIpAddress: true
+        DeviceIndex: "0"
+        SubnetId: !Ref PublicSubnet1a
+        GroupSet:
+        - !Ref SecurityGroup
+      DisableApiTermination: true
+      Tags:
+        - Key: Name
+          Value: aws-study-ec2
+
+  RDSInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier: aws-study-rds
+      DBName: awsstudy
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: "20"
+      StorageType: GP2
+      Engine: mysql
+      EngineVersion: "8.0.43"
+      MasterUsername: root
+      MasterUserPassword: rootroot
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: aws-study-rds-sg
+      GroupDescription: "-"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 10.0.0.0/23
+      Tags:
+        - Key: Name
+          Value: aws-study-rds-sg
+
+  DBSubnetGroup: 
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupName: rds-ec2-db-subnet-group-4
+      DBSubnetGroupDescription: "-"
+      SubnetIds: 
+        - !Ref PrivateSubnet1a
+        - !Ref PrivateSubnet1c
+
+  TargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        Name: aws-study-tg
+        Protocol: HTTP
+        Port: 80
+        TargetType: instance
+        VpcId: !Ref VPC
+        Targets:
+          - Id: !Ref Instance
+            Port: 8080
+          - Id: !Ref Instance
+            Port: 80
+
+  ApplicationLoadBalancer:
+      Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+      Properties:
+        Name: aws-study-alb
+        Type: application
+        Scheme: internet-facing
+        Subnets: 
+          - !Ref PublicSubnet1a
+          - !Ref PublicSubnet1c
+        SecurityGroups: 
+          - !Ref SecurityGroup
+
+  ListenerRule:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+          DefaultActions:
+              - Type: forward
+                TargetGroupArn: !Ref TargetGroup
+          LoadBalancerArn: !Ref ApplicationLoadBalancer
+          Port: 80
+          Protocol: HTTP
