@@ -120,17 +120,17 @@ Resources:
       SubnetId: !Ref PrivateSubnet1c
       RouteTableId: !Ref PrivateRouteTable1c
 
-  SecurityGroup:
+  EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: aws-study-sg
+      GroupName: aws-study-ec2-sg
       GroupDescription: allow SSH, HTTP, and HTTPS
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0
+          CidrIp: 162.120.184.21/32
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -145,7 +145,7 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Value: Name
-          Key: aws-study-sg
+          Key: aws-study-ec2-sg
 
   Instance:
     Type: 'AWS::EC2::Instance'
@@ -158,7 +158,7 @@ Resources:
         DeviceIndex: "0"
         SubnetId: !Ref PublicSubnet1a
         GroupSet:
-        - !Ref SecurityGroup
+        - !Ref EC2SecurityGroup
       DisableApiTermination: true
       Tags:
         - Key: Name
@@ -215,8 +215,25 @@ Resources:
         Targets:
           - Id: !Ref Instance
             Port: 8080
-          - Id: !Ref Instance
-            Port: 80
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: aws-study-alb-sg
+      GroupDescription: allow HTTP and HTTPS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Value: Name
+          Key: aws-study-alb-sg
 
   ApplicationLoadBalancer:
       Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -228,7 +245,7 @@ Resources:
           - !Ref PublicSubnet1a
           - !Ref PublicSubnet1c
         SecurityGroups: 
-          - !Ref SecurityGroup
+          - !Ref ALBSecurityGroup
 
   ListenerRule:
       Type: AWS::ElasticLoadBalancingV2::Listener
