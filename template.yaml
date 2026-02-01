@@ -132,17 +132,9 @@ Resources:
           ToPort: 22
           CidrIp: 162.120.184.21/32
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref ALBSecurityGroup
       Tags:
         - Value: Name
           Key: aws-study-ec2-sg
@@ -208,8 +200,10 @@ Resources:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
       Properties:
         Name: aws-study-tg
+        HealthCheckPath: /
+        HealthCheckPort: HTTP
         Protocol: HTTP
-        Port: 80
+        Port: 8080
         TargetType: instance
         VpcId: !Ref VPC
         Targets:
