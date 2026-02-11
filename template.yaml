@@ -200,8 +200,8 @@ Resources:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
       Properties:
         Name: aws-study-tg
-        HealthCheckPath: /
-        HealthCheckPort: "80"
+        HealthCheckPath:  /actuator/health
+        HealthCheckPort: "8080"
         Protocol: HTTP
         Port: 8080
         TargetType: instance
