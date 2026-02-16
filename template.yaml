@@ -203,7 +203,7 @@ Resources:
         HealthCheckPath:  /
         HealthCheckPort: "8080"
         Protocol: HTTP
-        Port: 80
+        Port: 8080
         TargetType: instance
         VpcId: !Ref VPC
         Targets:
