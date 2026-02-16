@@ -124,13 +124,13 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: aws-study-ec2-sg
-      GroupDescription: allow SSH, HTTP, and HTTPS
+      GroupDescription: allow SSH and 8080
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 162.120.184.21/32
+          CidrIp: 59.168.210.175/32
         - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
@@ -200,10 +200,10 @@ Resources:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
       Properties:
         Name: aws-study-tg
-        HealthCheckPath:  /actuator/health
+        HealthCheckPath:  /
         HealthCheckPort: "8080"
         Protocol: HTTP
-        Port: 8080
+        Port: 80
         TargetType: instance
         VpcId: !Ref VPC
         Targets:
