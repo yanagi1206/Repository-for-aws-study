@@ -1,5 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: first template 
+Description: second template
+
+Parameters:
+  RDSrootpassword:
+    Type: String
+    NoEcho: true
+  EmailAddress:
+    Type: String
 
 Resources:
   VPC:
@@ -76,9 +83,9 @@ Resources:
   PublicRoute:
     Type: AWS::EC2::Route
     Properties:
-       RouteTableId: !Ref PublicRouteTable
-       DestinationCidrBlock: 0.0.0.0/0
-       GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
 
   PublicSubnet1aRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -167,7 +174,7 @@ Resources:
       Engine: mysql
       EngineVersion: "8.0.43"
       MasterUsername: root
-      MasterUserPassword: rootroot
+      MasterUserPassword: !Ref RDSrootpassword
       DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
         - !Ref RDSSecurityGroup
@@ -197,18 +204,18 @@ Resources:
         - !Ref PrivateSubnet1c
 
   TargetGroup:
-      Type: AWS::ElasticLoadBalancingV2::TargetGroup
-      Properties:
-        Name: aws-study-tg
-        HealthCheckPath:  /
-        HealthCheckPort: "8080"
-        Protocol: HTTP
-        Port: 8080
-        TargetType: instance
-        VpcId: !Ref VPC
-        Targets:
-          - Id: !Ref Instance
-            Port: 8080
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: aws-study-tg
+      HealthCheckPath:  /
+      HealthCheckPort: "8080"
+      Protocol: HTTP
+      Port: 8080
+      TargetType: instance
+      VpcId: !Ref VPC
+      Targets:
+        - Id: !Ref Instance
+          Port: 8080
 
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -230,23 +237,121 @@ Resources:
           Key: aws-study-alb-sg
 
   ApplicationLoadBalancer:
-      Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-      Properties:
-        Name: aws-study-alb
-        Type: application
-        Scheme: internet-facing
-        Subnets: 
-          - !Ref PublicSubnet1a
-          - !Ref PublicSubnet1c
-        SecurityGroups: 
-          - !Ref ALBSecurityGroup
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: aws-study-alb
+      Type: application
+      Scheme: internet-facing
+      Subnets: 
+        - !Ref PublicSubnet1a
+        - !Ref PublicSubnet1c
+      SecurityGroups: 
+        - !Ref ALBSecurityGroup
 
   ListenerRule:
-      Type: AWS::ElasticLoadBalancingV2::Listener
-      Properties:
-          DefaultActions:
-              - Type: forward
-                TargetGroupArn: !Ref TargetGroup
-          LoadBalancerArn: !Ref ApplicationLoadBalancer
-          Port: 80
-          Protocol: HTTP
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+          - Type: forward
+            TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  Ec2CpuUtilizetionAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: Ec2CpuUtilization
+      AlarmDescription: Alarted_When_CpuUtilization_Is_Over1%
+      Namespace: AWS/EC2
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref Instance
+      MetricName: CPUUtilization
+      Unit: Percent
+      Period: 300
+      Statistic: Average
+      Threshold: 60
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      TreatMissingData: missing
+      ActionsEnabled: true
+      AlarmActions: 
+        - !Ref MySNSTopic
+
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+
+  MySNSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref EmailAddress
+      TopicArn: !Ref MySNSTopic
+
+  WebApplicationFirewall:
+    Type: AWS::WAFv2::WebACL
+    Properties: 
+      Name: aws-study-waf
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        SampledRequestsEnabled: true
+        MetricName: aws-study-waf
+      Rules:
+        - Name: AWS-AWSManagedRulesCommonRuleSet
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            SampledRequestsEnabled: true
+            MetricName: AWS-AWSManagedRulesCommonRuleSet
+
+  WebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ApplicationLoadBalancer
+      WebACLArn: !GetAtt WebApplicationFirewall.Arn
+
+  CloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: aws-waf-logs-aws-study
+  
+  LoggingConfiguration:
+    Type: AWS::WAFv2::LoggingConfiguration
+    Properties:
+      ResourceArn: !GetAtt WebApplicationFirewall.Arn
+      LogDestinationConfigs:
+      - !GetAtt CloudWatchLogGroup.Arn
+
+  WAFLogsResourcePolicy:
+    Type: AWS::Logs::ResourcePolicy
+    Properties:
+      PolicyName: AllowRegionalWAFToWriteLogs
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AWSWAFLogsDelivery",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com"
+              },
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:aws-waf-logs-*"
+            }
+          ]
+        }
