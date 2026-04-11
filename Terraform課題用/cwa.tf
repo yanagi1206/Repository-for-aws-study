@@ -9,7 +9,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm" {
   unit                = "Percent"
   period              = 300
   statistic           = "Average"
-  threshold           = 15
+  threshold           = 60
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   datapoints_to_alarm = 1

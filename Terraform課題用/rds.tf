@@ -29,11 +29,20 @@ resource "aws_db_instance" "rds" {
   engine                 = "mysql"
   engine_version         = "8.0.43"
   instance_class         = "db.t4g.micro"
-  username               = "root"
-  password               = "rootroot"
+  username               = data.aws_ssm_parameter.db_username.value
+  password               = data.aws_ssm_parameter.db_password.value
   skip_final_snapshot    = true
   db_subnet_group_name   = aws_db_subnet_group.default.name
   vpc_security_group_ids = [aws_security_group.RDSSecurityGroup.id]
+}
+
+data "aws_ssm_parameter" "db_username" {
+  name = "/rds-authentication/rds-username"
+}
+
+data "aws_ssm_parameter" "db_password" {
+  name            = "/rds-authentication/rds-password"
+  with_decryption = true
 }
 
 resource "aws_db_subnet_group" "default" {
