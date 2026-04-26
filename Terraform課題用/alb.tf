@@ -1,4 +1,4 @@
-resource "aws_security_group" "ALBSecurityGroup" {
+resource "aws_security_group" "alb_security_group" {
   name        = "aws-study-sg-alb"
   description = "allow HTTP and HTTPS"
   vpc_id      = aws_vpc.vpc.id
@@ -9,7 +9,7 @@ resource "aws_security_group" "ALBSecurityGroup" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_http" {
-  security_group_id = aws_security_group.ALBSecurityGroup.id
+  security_group_id = aws_security_group.alb_security_group.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 80
   ip_protocol       = "tcp"
@@ -17,7 +17,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_http" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_https" {
-  security_group_id = aws_security_group.ALBSecurityGroup.id
+  security_group_id = aws_security_group.alb_security_group.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 443
   ip_protocol       = "tcp"
@@ -25,7 +25,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_https" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_internet" {
-  security_group_id = aws_security_group.ALBSecurityGroup.id
+  security_group_id = aws_security_group.alb_security_group.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
@@ -40,14 +40,14 @@ resource "aws_lb_target_group" "tg" {
   }
 }
 
-resource "aws_lb_target_group_attachment" "test" {
+resource "aws_lb_target_group_attachment" "alb_tg_attachment" {
   target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = aws_instance.EC2instance.id
+  target_id        = aws_instance.ec2_instance.id
   port             = 8080
 }
 
 resource "aws_lb" "alb" {
-  security_groups = [aws_security_group.ALBSecurityGroup.id]
+  security_groups = [aws_security_group.alb_security_group.id]
   subnets         = [aws_subnet.pubsub1a.id, aws_subnet.pubsub1c.id]
 }
 

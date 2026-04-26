@@ -1,4 +1,4 @@
-resource "aws_security_group" "RDSSecurityGroup" {
+resource "aws_security_group" "rds_security_group" {
   name        = "aws-study-sg-rds"
   description = "allow 3306"
   vpc_id      = aws_vpc.vpc.id
@@ -9,15 +9,15 @@ resource "aws_security_group" "RDSSecurityGroup" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ec2" {
-  security_group_id            = aws_security_group.RDSSecurityGroup.id
-  referenced_security_group_id = aws_security_group.EC2SecurityGroup.id
+  security_group_id            = aws_security_group.rds_security_group.id
+  referenced_security_group_id = aws_security_group.ec2_security_group.id
   from_port                    = 3306
   ip_protocol                  = "tcp"
   to_port                      = 3306
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ec2" {
-  security_group_id = aws_security_group.RDSSecurityGroup.id
+  security_group_id = aws_security_group.rds_security_group.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
@@ -33,7 +33,7 @@ resource "aws_db_instance" "rds" {
   password               = data.aws_ssm_parameter.db_password.value
   skip_final_snapshot    = true
   db_subnet_group_name   = aws_db_subnet_group.default.name
-  vpc_security_group_ids = [aws_security_group.RDSSecurityGroup.id]
+  vpc_security_group_ids = [aws_security_group.rds_security_group.id]
 }
 
 data "aws_ssm_parameter" "db_username" {

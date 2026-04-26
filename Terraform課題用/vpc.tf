@@ -1,7 +1,3 @@
-# ----------
-# リソース定義
-# ----------
-# VPCを作る
 resource "aws_vpc" "vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -10,12 +6,6 @@ resource "aws_vpc" "vpc" {
   tags = {
     Name = "aws-study-vpc-tf"
   }
-}
-
-# ターミナルへの出力など
-# 同じmodule内やファイル内なら、VPC IDは「aws_vpc.main_vpc.id」で参照ができる
-output "vpc_id" {
-  value = aws_vpc.vpc.id
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -62,7 +52,7 @@ resource "aws_subnet" "pvtsub1c" {
   }
 }
 
-resource "aws_route_table" "PublicRouteTable" {
+resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.vpc.id
 
   route {
@@ -71,34 +61,34 @@ resource "aws_route_table" "PublicRouteTable" {
   }
 
   tags = {
-    Name = "aws-study-PublicRouteTable"
+    Name = "aws-study-public_route_table"
   }
 }
 
-resource "aws_route_table" "PrivateRouteTable" {
+resource "aws_route_table" "private_route_table" {
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "aws-study-PrivateRouteTable"
+    Name = "aws-study-private_route_table"
   }
 }
 
 resource "aws_route_table_association" "public1a" {
   subnet_id      = aws_subnet.pubsub1a.id
-  route_table_id = aws_route_table.PublicRouteTable.id
+  route_table_id = aws_route_table.public_route_table.id
 }
 
 resource "aws_route_table_association" "public1c" {
   subnet_id      = aws_subnet.pubsub1c.id
-  route_table_id = aws_route_table.PublicRouteTable.id
+  route_table_id = aws_route_table.public_route_table.id
 }
 
-resource "aws_route_table_association" "provate1a" {
+resource "aws_route_table_association" "private1a" {
   subnet_id      = aws_subnet.pvtsub1a.id
-  route_table_id = aws_route_table.PrivateRouteTable.id
+  route_table_id = aws_route_table.private_route_table.id
 }
 
-resource "aws_route_table_association" "provate1c" {
+resource "aws_route_table_association" "private1c" {
   subnet_id      = aws_subnet.pvtsub1c.id
-  route_table_id = aws_route_table.PrivateRouteTable.id
+  route_table_id = aws_route_table.private_route_table.id
 }

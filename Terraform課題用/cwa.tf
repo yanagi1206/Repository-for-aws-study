@@ -3,7 +3,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm" {
   alarm_description = "Alarted_When_CpuUtilization_Is_Over60%"
   namespace         = "AWS/EC2"
   dimensions = {
-    InstanceId = aws_instance.EC2instance.id
+    InstanceId = aws_instance.ec2_instance.id
   }
   metric_name         = "CPUUtilization"
   unit                = "Percent"
@@ -24,5 +24,5 @@ resource "aws_sns_topic" "sns" {}
 resource "aws_sns_topic_subscription" "sns" {
   topic_arn = aws_sns_topic.sns.arn
   protocol  = "email"
-  endpoint  = "example@gmail.com"
+  endpoint  = ""
 }
