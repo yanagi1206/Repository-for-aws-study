@@ -1,0 +1,63 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    paths:
+      - 'Terraform課題用/**.tf'
+      - 'Terraform課題用/tests/**.tftest.hcl'
+      - '.github/workflows/**.yaml'
+      - '.github/workflows/**.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'Terraform課題用/**.tf'
+      - 'Terraform課題用/tests/**.tftest.hcl'
+      - '.github/workflows/**.yaml'
+      - '.github/workflows/**.yml'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    env:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      region: ap-northeast-1
+
+    defaults:
+      run:
+        working-directory: Terraform課題用
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.7  # 好きなバージョンに
+
+      # 初期化
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      # フォーマットチェック
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      # バリデーション
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Plan（差分確認）
+      - name: Terraform Plan
+        run: terraform plan
+
+      # Test（仕様確認）
+      - name: Terraform Test
+        run: terraform test
+
+      # Apply（デプロイ）
+      - name: Terraform Apply
+        run: terraform apply
