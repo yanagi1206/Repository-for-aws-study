@@ -42,7 +42,7 @@ resource "aws_lb_target_group" "tg" {
 
 resource "aws_lb_target_group_attachment" "alb_tg_attachment" {
   target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = [aws_instance.ec2_instance.id, aws_instance.ec2_instance_2.id]
+  target_id        = aws_instance.ec2_instance.id
   port             = 8080
 }
 
