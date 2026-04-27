@@ -60,5 +60,4 @@ jobs:
 
       # Apply（デプロイ）
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve
