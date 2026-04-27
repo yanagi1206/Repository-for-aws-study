@@ -50,16 +50,3 @@ resource "aws_instance" "ec2_instance" {
     Name = "aws-study-ec2-tf"
   }
 }
-
-resource "aws_instance" "ec2_instance_2" {
-  ami                         = "ami-088b486f20fab3f0e"
-  instance_type               = "t3.micro"
-  key_name                    = "new-yanagi-keypair"
-  subnet_id                   = aws_subnet.pubsub1c.id
-  vpc_security_group_ids      = [aws_security_group.ec2_security_group.id]
-  associate_public_ip_address = true
-
-  tags = {
-    Name = "aws-study-ec2-tf"
-  }
-}
