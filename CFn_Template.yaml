@@ -149,7 +149,7 @@ Resources:
   Instance:
     Type: 'AWS::EC2::Instance'
     Properties: 
-      ImageId: ami-09cd9fdbf26acc6b4
+      ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}"
       InstanceType: t3.micro
       KeyName: new-yanagi-keypair
       NetworkInterfaces: 
@@ -173,7 +173,7 @@ Resources:
       StorageType: GP2
       Engine: mysql
       EngineVersion: "8.0.43"
-      MasterUsername: root
+      MasterUsername: admin
       MasterUserPassword: !Ref RDSrootpassword
       DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
@@ -183,13 +183,13 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: aws-study-rds-sg
-      GroupDescription: "-"
+      GroupDescription: "allow 3306"
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          CidrIp: 10.0.0.0/23
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
       Tags:
         - Key: Name
           Value: aws-study-rds-sg
@@ -197,7 +197,6 @@ Resources:
   DBSubnetGroup: 
     Type: "AWS::RDS::DBSubnetGroup"
     Properties: 
-      DBSubnetGroupName: rds-ec2-db-subnet-group-4
       DBSubnetGroupDescription: "-"
       SubnetIds: 
         - !Ref PrivateSubnet1a
@@ -262,7 +261,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: Ec2CpuUtilization
-      AlarmDescription: Alarted_When_CpuUtilization_Is_Over1%
+      AlarmDescription: Alarted_When_CpuUtilization_Is_Over60%
       Namespace: AWS/EC2
       Dimensions:
         - Name: InstanceId
