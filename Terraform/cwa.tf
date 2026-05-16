@@ -24,5 +24,5 @@ resource "aws_sns_topic" "sns" {}
 resource "aws_sns_topic_subscription" "sns" {
   topic_arn = aws_sns_topic.sns.arn
   protocol  = "email"
-  endpoint  = ""
+  endpoint  = "n07550006@gmail.com"
 }
