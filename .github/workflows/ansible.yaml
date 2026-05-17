@@ -26,6 +26,10 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: Terraform
+
     outputs:
       ec2_ip: ${{ steps.tf-ec2-ip.outputs.ec2_ip }}
 
