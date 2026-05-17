@@ -19,6 +19,10 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: Terraform
+
     steps:
       - uses: actions/checkout@v5
       - uses: hashicorp/setup-terraform@v3
@@ -38,16 +42,16 @@ jobs:
       - run: terraform plan
       - run: terraform test
 
-
   terraform-apply:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: Terraform
+
     environment:
       name: production
-
-    outputs:
-      ec2_ip: ${{ steps.tf-ec2-ip.outputs.ec2_ip }}
 
     steps:
       - uses: actions/checkout@v5
@@ -64,8 +68,4 @@ jobs:
       - run: terraform version
       - run: terraform init
       - run: terraform apply -auto-approve
-
-      - name: Get EC2 IP
-        id: tf-ec2-ip
-        run: |
-          echo "ec2_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+      - run: terraform output -raw ec2_public_ip
